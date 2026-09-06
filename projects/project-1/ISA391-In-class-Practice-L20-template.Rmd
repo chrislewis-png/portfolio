@@ -1,0 +1,199 @@
+---
+title: "In class Practice L20"
+author: "Update your name here"
+date: "2026-04-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Q1:  Write the corresponding assumed regression model symbolically.
+
+**Example: `formula = Balance~Income + Rating + Income:Rating`**
+          
+**Model**:  $E(y)=\beta_0 + \beta_1\times Income +\beta_2\times Rating + \beta_3 \times Income\times Rating$
+
+
+
+
+* `formula = Balance~(Limit + Rating)^2`
+
+**Model**:  $E(y)=\beta_0 +\beta_1\times Limit +\beta_2\times Rating + \beta_3 \times Limit\times Rating$
+
+
+
+
+* `formula = Balance~(Income + Rating)^2 + I(Income^2) + I(Rating^2)`
+
+**Model**: $E(y)=\beta_0 + \beta_1\times Income +\beta_2\times Rating + (\beta_3\times Income\times Rating) + (\beta_4\times Income)^2+(\beta_5\times Rating)^2 $
+
+
+
+
+* `formula = Balance~(Limit + Rating + Income)^2`
+
+**Model**:  $E(y)=\beta_0+\beta_1\times Limit + \beta_2\times Rating+\beta_3\times Income + \beta_4\times (Limit\times Rating\times Income)$ Wrong, look at next one
+
+
+
+
+
+* `formula = Balance~(Limit + Rating + Income)^2 + I(Limit^2) + I(Rating^2) + I(Income^2)`
+
+**Model**:  $E(y)=\beta_0+\beta_1\times Limit + \beta_2\times Rating+\beta_3\times Income + \beta_4\times (Limit\times Rating) + \beta_5\times (Rating\times Income)+ \beta_6\times (Income\times Limit)+ \beta_7\times Limit^2 + \beta_8\times Rating^2 + \beta_9\times Income^2$
+
+
+
+### Q2: Read data `Credit_Group.csv` into R as `credit`. Create `Model0`. Print summary. Check the significance of the interaction term. 
+
+**Read data**
+```{r}
+credit <- read.csv("Credit_Group.csv")
+head(credit)
+```
+
+**Create `Model0`, and print summary**
+```{r}
+Model0 <- lm(Balance ~ (Income+Cards)^2, data=credit)
+summary(Model0)
+```
+
+**Check the significance of the interaction term.**
+
+p=.712
+There is not a significant interaction between Income and Cards
+
+
+
+### Q3: Construct an interaction plot. Describe the relationship between estimated Balance and Income and how it depends on Cards. 
+
+**Create three conditions of Cards: low Cards, medium Cards and high Cards**
+```{r}
+lowcard <- mean(credit$Cards) - sd(credit$Cards)
+medcard <- mean(credit$Cards)
+highcard <- mean(credit$Cards) + sd(credit$Cards)
+```
+
+**Create three corresponding lines/equations**
+```{r}
+# Model0$coefficients
+b0 <-Model0$coefficients[1] ##Plug these in instead of values
+b1 <-Model0$coefficients[2]
+b2 <-Model0$coefficients[3]
+b3 <-Model0$coefficients[4]
+
+# three corresponding equations
+lowbal <- 173.5283 + 5.6749*credit$Income + 23.5993*lowcard + .152*credit$Income*lowcard
+medbal <- 173.5283 + 5.6749*credit$Income + 23.5993*medcard + .152*credit$Income*medcard
+highbal <-173.5283 + 5.6749*credit$Income + 23.5993*highcard + .152*credit$Income*highcard
+
+```
+
+
+**Create Interaction plot**
+```{r}
+     ###x vs y
+plot(credit$Income, lowbal, type="l", xlab="Income")
+lines(credit$Income, medbal, col="red")
+lines(credit$Income, highbal, col="blue")
+legend(3,1000, legend=c("Low Cards", "Medium Card", "High Cards"), col=c("black", "red", "blue"), lty=1, cex=.8)
+```
+
+**Describe the relationship** 
+
+Cant interpret plot since interaction not significant but;
+
+We can see that the lines are parralell. This shows that the relationship between Balance and Income does not depend on cards. There is no significant interaction between Income and Cards.
+
+When the Income increases so does Balance meaning there is a positive relationship, as cards increase balance but it will not effect the relationship between income and balance.
+
+
+
+
+### Q4: Fit **the complete second order model** `Model1`. Print summary.
+
+```{r}
+Model1 <- lm(Balance ~ (Income+Limit+Rating)^2 + I(Income^2)+ I(Limit^2)+ I(Rating^2), data=credit)
+summary(Model1)
+```
+
+
+
+### Q5: Using `Model1`, find a point estimate.
+
+```{r}
+predict(Model1, newdata=data.frame(Income=50, Rating=355, Limit=4700))
+
+```
+
+
+
+### Q6: Repeat Question 4 using centered variables. Call this model `Model2`.
+
+```{r}
+credit$Income.cnt <- credit$Income - mean(credit$Income)
+credit$Limit.cnt <- credit$Limit - mean(credit$Limit)
+credit$Rating.cnt <- credit$Rating - mean(credit$Rating)
+
+Model2 <- lm(Balance ~ (Income.cnt+Limit.cnt+Rating.cnt)^2 + I(Income.cnt^2)+ I(Limit.cnt^2)+ I(Rating.cnt^2), data=credit)
+summary(Model2)
+```
+
+
+
+### Q7: Why do we center variables before building regression models? Does the centering help to improve the model in this case?
+
+We center variables to account for the interaction term, if the variables are uncentered the coefficients may be unreliable and the p value may not be statistically significant. In this case centering the variables did improve the model since the P values for each of the 3 variables is now significant. 
+
+
+It often reduce the correlation between the individual variable and the higher order terms
+
+
+
+
+
+### Q8: Using `Model2`, find a point estimate.  Does your answer change from the one in Question 5.
+
+```{r}
+
+predict(Model2, newdata=data.frame(Income.cnt=50-mean(credit$Income), Rating.cnt=355-mean(credit$Rating), Limit.cnt=4700-mean(credit$Limit)))
+```
+
+**Does your answer change from the one in Question 5?**
+
+No
+
+
+### Q9: Add `Group` into consideration as `model3`, and add group effect to `Model2` to see whether `Group` has a significant effect to the Balance. Hint: remember to change `Group` to factor type. 
+   
+```{r}
+
+# change `Group` type to factor 
+credit$Group <- as.factor(credit$Group)
+
+# add `Group` into regression
+Model3 <- lm(Balance ~ (Income.cnt+Limit.cnt+Rating.cnt)^2 + I(Income.cnt^2)+ I(Limit.cnt^2)+ I(Rating.cnt^2)+Group, data=credit)
+summary(Model3)
+```
+   
+**Does `Group` have a significant effect to the Balance? How? **
+
+Keeping income, Limit, and Rating fixed, compared to group A group B is normally higher by about 8.008
+
+Yes, the p value for GroupCis 1.58e-11 meaning the is is a significant predictor
+
+
+
+### Q10: Using `Model3`, find point estimates for three groups separately. Are predictions support the conclusion in question 9)? 
+
+```{r}
+predict(Model2, newdata=data.frame(Income.cnt=50-mean(credit$Income), Rating.cnt=355-mean(credit$Rating), Limit.cnt=4700-mean(credit$Limit), Group=c("A","B","C")))
+
+```
+
+**Are predictions support the conclusion in question 9)? Why? **
+
+Yes, the predictors for group A and B are quite close, no significant difference. But there is significant difference between A and C.
