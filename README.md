@@ -1,3 +1,8 @@
 # Portfolio
 
-This site was built with ChatISA's Portfolio Builder and is published with GitHub Pages. Edit index.html to make it yours. Project files live under projects/.
+Personal portfolio website: https://chrislewis-png.github.io/portfolio/
+
+## What I changed
+
+- I adjusted my headline to be data scientist rather than Marketing Student 
+- I changed certain course names to be accurate to actual names
